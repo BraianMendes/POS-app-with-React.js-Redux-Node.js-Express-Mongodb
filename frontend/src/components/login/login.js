@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { Formik } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
+import swal from "sweetalert";
 import { Link } from "react-router-dom";
 const LoginSchema = Yup.object().shape({
   username: Yup.string()
@@ -176,6 +177,5 @@ class Login extends Component {
     );
   }
 }
-
 
 export default Login;

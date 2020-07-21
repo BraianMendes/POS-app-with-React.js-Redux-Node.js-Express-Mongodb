@@ -1,10 +1,10 @@
 import React from 'react';
 import { shallow } from 'enzyme';
-import Login from './login';
+import Passwordforgot from './passwordforgot';
 
-describe('<Login />', () => {
+describe('<Passwordforgot />', () => {
   test('renders', () => {
-    const wrapper = shallow(<Login />);
+    const wrapper = shallow(<Passwordforgot />);
     expect(wrapper).toMatchSnapshot();
   });
 });
