@@ -1,7 +1,9 @@
 import React, { Component } from "react";
 import swal from "sweetalert";
 import { withRouter, Link } from "react-router-dom";
+
 class Header extends Component {
+
   Logout = () => {
     swal("Are your sure SignOut?", {
       buttons: {
@@ -30,6 +32,7 @@ class Header extends Component {
       }
     });
   };
+
   render() {
     return (
       <nav className="main-header navbar navbar-expand navbar-white navbar-light">

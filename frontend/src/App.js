@@ -1,14 +1,18 @@
 import React, { Component } from "react";
-import Header from "./components/header";
-import Sidebar from "./components/sidebar";
-import Footer from "./components/footer";
-import Register from "./components/register";
-import Login from "./components/login";
-import Dashboard from "./components/dashboard";
 import { BrowserRouter as Router, Switch, Route, Redirect } from "react-router-dom";
+
+import Register from "./pages/RegisterPage";
+import Login from "./pages/LoginPage";
+import Dashboard from "./pages/DashboardPage";
+import Profile from "./pages/ProfilePage";
+
+
 const isLoggedIn = () => {
   return localStorage.getItem('TOKEN_KEY') != null;
 };
+
+// Verify if is Logged In with JWT
+// If it's not send so to LoginPage
 const SecuredRoute = ({ component: Component, ...rest }) => (
     
   <Route
@@ -23,6 +27,7 @@ const SecuredRoute = ({ component: Component, ...rest }) => (
     }
   />
 );
+
 export default class App extends Component {
   
   render() {
@@ -31,15 +36,10 @@ export default class App extends Component {
       <Router>
         <Switch>
           <div>
-          {isLoggedIn() && (
-              <>
-                <Header /> <Sidebar />
-              </>
-            )}
             <Route path="/register" component={Register} />
             <Route path="/login" component={Login} />
+            <SecuredRoute path="/profile" component={Profile} />
             <SecuredRoute path="/dashboard" component={Dashboard} />
-            {isLoggedIn() && <Footer />}
           </div>
         </Switch>
       </Router>

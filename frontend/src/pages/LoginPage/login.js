@@ -3,22 +3,17 @@ import { Formik } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
 import swal from "sweetalert";
-const SignupSchema = Yup.object().shape({
+import { Link } from "react-router-dom";
+
+const LoginSchema = Yup.object().shape({
   username: Yup.string()
     .min(2, "username is Too Short!")
     .max(50, "username is Too Long!")
-    .required("username is Required"),
-  email: Yup.string()
-    .email("Invalid email")
-    .required("Email is Required"),
-  password: Yup.string().required("Password is required"),
-  confirm_password: Yup.string().oneOf(
-    [Yup.ref("password"), null],
-    "Both password need to be the same"
-  )
+    .required("Username is Required"),
+  password: Yup.string().required("Password is required")
 });
 
-class Register extends Component {
+class Login extends Component {
   constructor(props) {
     super(props);
 
@@ -27,14 +22,30 @@ class Register extends Component {
     };
   }
 
+  componentDidMount() {
+    // Prevent Logged In User from Visiting the Login Page
+    // Every time a user tries to visit the login page, we check whether the token is present. If yes, we return the user to the last visited page.
+    if (localStorage.getItem("TOKEN_KEY") != null) {
+      return this.props.history.push('/dashboard');
+    }
+    let notify = this.props.match.params["notify"]
+    if(notify !== undefined){
+      if(notify == 'error'){
+        swal("Activation Fail please try again !", '', "error")
+      }else if(notify == 'success'){
+        swal("Activation Success your can login !", '', "success")
+      }
+    }
+  }
+
   submitForm = (values, history) => {
     axios
-      .post("http://localhost:8080/register", values)
+      .post("http://localhost:8080/login", values)
       .then(res => {
-        console.log(res.data.result);
         if (res.data.result === "success") {
-          swal("Success!", res.data.message, "warning").then(value => {
-            history.push("/login");
+          localStorage.setItem("TOKEN_KEY", res.data.token);
+          swal("Success!", res.data.message, "success").then(value => {
+            history.push("/dashboard");
           });
         } else if (res.data.result === "error") {
           swal("Error!", res.data.message, "error");
@@ -42,7 +53,7 @@ class Register extends Component {
       })
       .catch(error => {
         console.log(error);
-        swal("Error!", "Unexpected error", "error");
+        return swal("Error!", error.message, "error");
       });
   };
   showForm = ({
@@ -56,7 +67,7 @@ class Register extends Component {
   }) => {
     return (
       <form onSubmit={handleSubmit}>
-        <div className="form-group has-feedback">
+        <div className="form-group input-group has-feedback">
           <input
             type="text"
             name="username"
@@ -70,32 +81,18 @@ class Register extends Component {
                 : "form-control"
             }
           />
-          {errors.fullname && touched.fullname ? (
+          <div class="input-group-append">
+            <div class="input-group-text">
+              <span class="fas fa-user"></span>
+            </div>
+          </div>
+          {errors.username && touched.username ? (
             <small id="passwordHelp" class="text-danger">
               {errors.username}
             </small>
           ) : null}
         </div>
-        <div className="form-group has-feedback">
-          <input
-            type="text"
-            name="email"
-            onChange={handleChange}
-            value={values.email}
-            className={
-              errors.email && touched.email
-                ? "form-control is-invalid"
-                : "form-control"
-            }
-            placeholder="Email"
-          />
-          {errors.email && touched.email ? (
-            <small id="passwordHelp" class="text-danger">
-              {errors.email}
-            </small>
-          ) : null}
-        </div>
-        <div className="form-group has-feedback">
+        <div className="form-group input-group mb-3 has-feedback">
           <input
             type="password"
             name="password"
@@ -109,50 +106,33 @@ class Register extends Component {
                 : "form-control"
             }
           />
+          <div class="input-group-append">
+            <div class="input-group-text">
+              <span class="fas fa-lock"></span>
+            </div>
+          </div>
           {errors.password && touched.password ? (
             <small id="passwordHelp" class="text-danger">
               {errors.password}
             </small>
           ) : null}
         </div>
-        <div className="form-group has-feedback">
-          <input
-            type="password"
-            name="confirm_password"
-            onChange={handleChange}
-            className={
-              errors.confirm_password && touched.confirm_password
-                ? "form-control is-invalid"
-                : "form-control"
-            }
-            placeholder="Confirm Password"
-          />
-          {errors.confirm_password && touched.confirm_password ? (
-            <small id="passwordHelp" class="text-danger">
-              {errors.confirm_password}
-            </small>
-          ) : null}
-        </div>
-        <div className="row">
-          <div className="col-md-12">
+        <div class="row">
+          <div class="col-8">
+            <div class="icheck-primary">
+              <input type="checkbox" id="remember" />
+              <label for="remember">Remember Me</label>
+            </div>
+          </div>
+          <div class="col-4">
             <button
-              disabled={isSubmitting}
               type="submit"
-              className="btn btn-primary btn-block btn-flat"
+              disabled={isSubmitting}
+              class="btn btn-primary btn-block"
             >
-              Confirm
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                this.props.history.push("/login");
-              }}
-              className="btn btn-default btn-block btn-flat"
-            >
-              already member?
+              Sign In
             </button>
           </div>
-          {/* /.col */}
         </div>
       </form>
     );
@@ -160,7 +140,7 @@ class Register extends Component {
 
   render() {
     return (
-      <div className="register-page">
+      <div class="login-page">
         <div className="register-box">
           <div className="register-logo">
             <a href="../../index2.html">
@@ -169,23 +149,28 @@ class Register extends Component {
           </div>
           <div className="card">
             <div className="card-body register-card-body">
-              <p className="login-box-msg">Register a new membership</p>
+              <p className="login-box-msg">Sign in to start your session</p>
 
               <Formik
                 initialValues={{
-                  fullname: "",
-                  email: "",
-                  password: "",
-                  confirm_password: ""
+                  username: "",
+                  password: ""
                 }}
                 onSubmit={(values, { setSubmitting }) => {
                   this.submitForm(values, this.props.history);
                   setSubmitting(false);
                 }}
-                validationSchema={SignupSchema}
+                validationSchema={LoginSchema}
               >
+                {/* {this.showForm()}            */}
                 {props => this.showForm(props)}
               </Formik>
+              <p class="mb-1">
+                <Link to="/password/forgot">I forgot my password</Link>
+              </p>
+              <p class="mb-0">
+                <Link to="/register">Register a new membership</Link>
+              </p>
             </div>
             {/* /.form-box */}
           </div>
@@ -196,4 +181,4 @@ class Register extends Component {
   }
 }
 
-export default Register;
+export default Login;

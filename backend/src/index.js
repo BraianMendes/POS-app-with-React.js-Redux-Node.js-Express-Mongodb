@@ -11,9 +11,10 @@ const fs = require("fs-extra");
 
 // First Config App
 app.use(express.static(__dirname + "/uploaded"));
+console.log(process.env.MONGODB_URL);
 
 // Require DB
-require("./utils/db");
+require("./utils/db.js");
 
 // Models
 const Users = require("./models/user_schema");
@@ -106,22 +107,24 @@ uploadImage = async (files, doc) => {
   }
 };
 
-// showPreviewImage = values => {
-//   return (
-//     <div class="text-center">
-//       <img
-//         id="avatars"
-//         src={
-//           values.file_obj != null
-//             ? values.file_obj
-//             : "http://localhost:8080/images/user.png"
-//         }
-//         class="profile-user-img img-fluid img-circle"
-//         width={100}
-//       />
-//     </div>
-//   );
-// };
+// listens to the file picker event of the file_obj form field 
+// and shows a default image if no image is picked
+showPreviewImage = values => {
+  return (
+    <div class="text-center">
+      <img
+        id="avatars"
+        src={
+          values.file_obj != null
+            ? values.file_obj
+            : "http://localhost:8080/images/user.png"
+        }
+        class="profile-user-img img-fluid img-circle"
+        width={100}
+      />
+    </div>
+  );
+};
 
 
 // Opening the door
