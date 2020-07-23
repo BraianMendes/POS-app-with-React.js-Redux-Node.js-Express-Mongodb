@@ -1,7 +1,7 @@
 var mongoose = require( 'mongoose' ); 
 
 // mongoose.connect(process.env.MONGODB_URL); 
-mongoose.connect('mongodb+srv://admin:admin2020!@cluster0.e6d4n.mongodb.net/dbPOS_app?retryWrites=true&w=majority', {useNewUrlParser: true}) 
+mongoose.connect(process.env.MONGODB_URL, {useNewUrlParser: true}) 
  
 mongoose.connection.on("connected", function() {
   console.log("Mongoose default connection open");

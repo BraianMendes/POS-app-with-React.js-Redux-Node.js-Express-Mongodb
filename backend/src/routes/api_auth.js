@@ -1,46 +1,57 @@
-require("dotenv").config({ path: __dirname + "/.env" });
 const express = require("express");
+const router = express.Router();
 const bcrypt = require("bcrypt");
-// Start the App
-const app = express();
-const bodyParser = require("body-parser");
-const cors = require("cors");
 const formidable = require("formidable");
 const path = require("path");
 const fs = require("fs-extra");
+const jsonwebtoken = require("jsonwebtoken");
 const sgMail = require("@sendgrid/mail");
 
+const Users = require("../models/user_schema");
+const jwt = require("../utils/jwt");
 
-// First Config App
-app.use(express.static(__dirname + "/uploaded"));
-console.log(process.env.MONGODB_URL);
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// Require DB
-require("./utils/db.js");
 
-// Models
-const Users = require("./models/user_schema");
-
-// Config App & Cors
-app.use(cors());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-
-// Start Auth with JWS
-const jwt = require("./utils/jwt");
-
-// SendGrid Email Configuration
-sgMail.setApiKey("SG.EaHyDwHnQN6I4SXQKaNo6g.Mhpx");
-
-// Routes
-// Navigations
-app.get("/", function(req, res, next) {
-  return res.send("Hello Nodejs");
+// Get User
+router.get("/profile/id/:id", async (req, res) => { 
+  let doc = await Users.findOne({ _id: req.params.id });
+  res.json(doc);
 });
 
-// User
+// Loging a User
+router.post("/login", async (req, res) => {
+  let doc = await Users.findOne({ username: req.body.username });
+  if (doc) {
+    if (bcrypt.compareSync(req.body.password, doc.password)) {
+      if (doc.status != "not_activated") {
+        const payload = {
+          id: doc._id,
+          level: doc.level,
+          username: doc.username
+        };
+
+        let token = jwt.sign(payload);
+        console.log(token);
+        res.json({ result: "success", token, message: "Login successfully" });
+      } else {
+        return res.json({
+          result: "error",
+          message: "Your need to activate account first"
+        });
+      }
+    } else {
+      // Invalid password
+      res.json({ result: "error", message: "Invalid password" });
+    }
+  } else {
+    // Invalid username
+    res.json({ result: "error", message: "Invalid username" });
+  }
+});
+
 // Registering a User
-app.post("/register", async (req, res) => {
+router.post("/register", async (req, res) => {
   try {
     req.body.password = await bcrypt.hash(req.body.password, 8);
 
@@ -85,69 +96,8 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// End of Registering User
-app.post("/profile", async (req, res) => {
-  try {
-    await Users.create(req.body);
-    res.json({ result: "success", message: "Register successfully" });
-  } catch (err) {
-    res.json({ result: "error", message: err.errmsg });
-  }
-});
-
-// Get User
-app.get("/profile/id/:id", async (req, res) => { 
-  let doc = await Users.findOne({ _id: req.params.id });
-  res.json(doc);
-});
-
-// Update User
-app.put("/profile", async (req, res) => {
-  try {
-    var form = new formidable.IncomingForm();
-    form.parse(req, async (err, fields, files) => {
-      let doc = await Users.findOneAndUpdate({ _id: fields.id }, fields);
-      await uploadImage(files, fields);
-      res.json({ result: "success", message: "Update Successfully" });
-    });
-  } catch (err) {
-    res.json({ result: "error", message: err.errmsg });
-  }
-});
-
-// Logging a User
-app.post("/login", async (req, res) => {
-  let doc = await Users.findOne({ username: req.body.username });
-  if (doc) {
-    if (bcrypt.compareSync(req.body.password, doc.password)) {
-      if (doc.status != "not_activated") {
-        const payload = {
-          id: doc._id,
-          level: doc.level,
-          username: doc.username
-        };
-
-        let token = jwt.sign(payload);
-        console.log(token);
-        res.json({ result: "success", token, message: "Login successfully" });
-      } else {
-        return res.json({
-          result: "error",
-          message: "Your need to activate account first"
-        });
-      }
-    } else {
-      // Invalid password
-      res.json({ result: "error", message: "Invalid password" });
-    }
-  } else {
-    // Invalid username
-    res.json({ result: "error", message: "Invalid username" });
-  }
-});
-
 // Activation User
-app.get("/activation/:token", async (req, res) => {
+router.get("/activation/:token", async (req, res) => {
   let token = req.params.token;
 
   if (token) {
@@ -172,9 +122,50 @@ app.get("/activation/:token", async (req, res) => {
   }
 });
 
+// End of Registering User
+router.post("/profile", async (req, res) => {
+  try {
+    await Users.create(req.body);
+    res.json({ result: "success", message: "Register successfully" });
+  } catch (err) {
+    res.json({ result: "error", message: err.errmsg });
+  }
+});
+
+uploadImage = async (files, doc) => {
+  if (files.avatars != null) {
+    var fileExtention = files.avatars.name.split(".").pop();
+    doc.avatars = `${Date.now()}+${doc.username}.${fileExtention}`;
+    var newpath =
+      path.resolve(__dirname + "/uploaded/images/") + "/" + doc.avatars;
+
+    if (fs.exists(newpath)) {
+      await fs.remove(newpath);
+    }
+    await fs.move(files.avatars.path, newpath);
+
+    // Update database
+    await Users.findOneAndUpdate({ _id: doc.id }, doc);
+  }
+};
+
+// Update User
+router.put("/profile", async (req, res) => {
+  try {
+    var form = new formidable.IncomingForm();
+    form.parse(req, async (err, fields, files) => {
+      let doc = await Users.findOneAndUpdate({ _id: fields.id }, fields);
+      await uploadImage(files, fields);
+      res.json({ result: "success", message: "Update Successfully" });
+    });
+  } catch (err) {
+    res.json({ result: "error", message: err.errmsg });
+  }
+});
+
 // Password
 // Create a Password
-app.post("/password/reset", async (req, res) => {
+router.post("/password/reset", async (req, res) => {
   let expired_time = "60m";
   const { email } = req.body;
   Users.findOne({ email }, (err, user) => {
@@ -231,7 +222,7 @@ app.post("/password/reset", async (req, res) => {
 });
 
 // Update Password
-app.put("/password/reset", async (req, res) => {
+router.put("/password/reset", async (req, res) => {
   const { password } = req.body;
   let resetPasswordToken = req.query.token;
   if (resetPasswordToken) {
@@ -269,45 +260,4 @@ app.put("/password/reset", async (req, res) => {
   }
 });
 
-uploadImage = async (files, doc) => {
-  if (files.avatars != null) {
-    var fileExtention = files.avatars.name.split(".").pop();
-    doc.avatars = `${Date.now()}+${doc.username}.${fileExtention}`;
-    var newpath =
-      path.resolve(__dirname + "/uploaded/images/") + "/" + doc.avatars;
-
-    if (fs.exists(newpath)) {
-      await fs.remove(newpath);
-    }
-    await fs.move(files.avatars.path, newpath);
-
-    // Update database
-    await Users.findOneAndUpdate({ _id: doc.id }, doc);
-  }
-};
-
-// listens to the file picker event of the file_obj form field 
-// and shows a default image if no image is picked
-// showPreviewImage = values => {
-//   return (
-//     <div class="text-center">
-//       <img
-//         id="avatars"
-//         src={
-//           values.file_obj != null
-//             ? values.file_obj
-//             : "http://localhost:8080/images/user.png"
-//         }
-//         class="profile-user-img img-fluid img-circle"
-//         width={100}
-//       />
-//     </div>
-//   );
-// };
-
-
-// Opening the door
-const port = 8080;
-app.listen(port, () => {
-  console.log("Server is running... on port " + port);
-});
+module.exports = router;
