@@ -5,6 +5,8 @@ import Register from "./pages/RegisterPage";
 import Login from "./pages/LoginPage";
 import Dashboard from "./pages/DashboardPage";
 import Profile from "./pages/ProfilePage";
+import PasswordForgotPage from './pages/password/PasswordForgotPage';
+import PasswordResetPage from './pages/password/PasswordResetPage';
 
 
 const isLoggedIn = () => {
@@ -36,8 +38,11 @@ export default class App extends Component {
       <Router>
         <Switch>
           <div>
-            <Route path="/register" component={Register} />
-            <Route path="/login" component={Login} />
+            <Route exact path="/register" component={Register} />
+            <Route exact path="/login" component={Login} />
+            {/* <Route exact path="/login/:notify?" component={Login} /> */}
+            <Route exact path="/password-reset/:token" component={PasswordResetPage} />
+            <Route exact path="/password/forgot" component={PasswordForgotPage} />
             <SecuredRoute path="/profile" component={Profile} />
             <SecuredRoute path="/dashboard" component={Dashboard} />
           </div>

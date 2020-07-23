@@ -35,6 +35,7 @@ class Login extends Component {
       }else if(notify == 'success'){
         swal("Activation Success your can login !", '', "success")
       }
+     
     }
   }
 
