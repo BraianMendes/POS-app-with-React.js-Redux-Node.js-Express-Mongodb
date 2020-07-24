@@ -4,7 +4,6 @@ const bcrypt = require("bcrypt");
 const app = express();
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const path = require("path");
 const sgMail = require("@sendgrid/mail");
 
 require("dotenv").config({ path:  __dirname + "/.env" });

@@ -61,36 +61,37 @@ router.post("/register", async (req, res) => {
       "process.env.JWT_ACCOUNT_ACTIVATION",
       { expiresIn: "365d" }
     );
-    const emailData = {
-      from: "admin@basicpos.io",
-      to: email,
-      subject: `Account activation link`,
-      html: `
-          <h1>Please use the following link to activate your account</h1>
-          <p><a href="localhost:8080/activation/${token}">Activation link</p>
-          <hr />
-          <p>This email may contain sensetive information</p>
-          <p>and link will  expired in 365 days</p>
-      `
-    };
+    // const emailData = {
+    //   from: "admin@basicpos.io",
+    //   to: email,
+    //   subject: `Account activation link`,
+    //   html: `
+    //       <h1>Please use the following link to activate your account</h1>
+    //       <p><a href="localhost:8080/activation/${token}">Activation link</p>
+    //       <hr />
+    //       <p>This email may contain sensetive information</p>
+    //       <p>and link will  expired in 365 days</p>
+    //   `
+    // };
     req.body.activated_token = token;
     let user = await Users.create(req.body);
-    sgMail
-      .send(emailData)
-      .then(sent => {
-        // console.log('SIGNUP EMAIL SENT', sent)
-        return res.json({
-          result: "success",
-          message: `Email has been sent to ${email}. Follow the instruction to activate your account`
-        });
-      })
-      .catch(err => {
-        // console.log('SIGNUP EMAIL SENT ERROR', err)
-        return res.json({
-          result: "error",
-          message: err.message
-        });
-      });
+    res.json({ result: "success", message: "Register successfully" });
+    // sgMail
+    //   .send(emailData)
+    //   .then(sent => {
+    //     // console.log('SIGNUP EMAIL SENT', sent)
+    //     return res.json({
+    //       result: "success",
+    //       message: `Email has been sent to ${email}. Follow the instruction to activate your account`
+    //     });
+    //   })
+    //   .catch(err => {
+    //     // console.log('SIGNUP EMAIL SENT ERROR', err)
+    //     return res.json({
+    //       result: "error",
+    //       message: err.message
+    //     });
+    //   });
   } catch (err) {
     res.json({ result: "error", message: err.errmsg });
   }
